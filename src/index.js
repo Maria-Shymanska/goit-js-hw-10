@@ -37,4 +37,71 @@ import { fetchCountries } from './fetchCountries';
 // Додай повідомлення "Oops, there is no country with that name" у разі помилки, використовуючи бібліотеку notiflix.
 // Не забувай про те, що fetch не вважає 404 помилкою, тому необхідно явно відхилити проміс, щоб можна було зловити і обробити помилку.
 
+const countryInput = document.querySelector('#search-box');
+const countryList = document.querySelector('.country-list');
+const countryInfo = document.querySelector('.country-info');
+
 const DEBOUNCE_DELAY = 300;
+
+countryInput.addEventListener(
+  'input',
+  debounce(inputCountrySearch, DEBOUNCE_DELAY)
+);
+
+function inputCountrySearch(evt) {
+  const onInputCountry = evt.target.value.trim();
+  if (onInputCountry === '') {
+    return;
+  }
+
+  fetchCountries(onInputCountry)
+    .then(response => {
+      if (response.length > 10) {
+        Notify.info(
+          'Too many matches found. Please enter a more specific name.'
+        );
+      }
+
+      if (response.length >= 2 && response.length <= 10) {
+        onSearchCountry(response);
+      }
+
+      if (response.length === 1) {
+        searchListCountry(response);
+      }
+    })
+    .catch(error => console.log(error));
+  clearSearchCountry();
+}
+
+function onSearchCountry(response) {
+  const markup = response
+    .map(el => {
+      return `<li class="item_country">
+            <img class="img" src="${el.flags.svg}" width = 30 alt="flag">
+            <h3 class="title">${el.name.official}</h3>
+            </li>`;
+    })
+    .join('');
+  countryList.innerHTML = markup;
+}
+
+function searchListCountry(response) {
+  const markup = response
+    .map(el => {
+      return `<div class="item_country"><img class="img" src="${
+        el.flags.svg
+      }" width=50 alt="flag">
+    <h1 class ="title">${el.name.official}</h1></div>
+    <p class="text"><b>Capital:</b> ${el.capital}</p>
+    <p class="text"><b>Population:</b> ${el.population}</p>
+    <p class="text"><b>Languages:</b> ${Object.values(el.languages)}</p>`;
+    })
+    .join('');
+  countryInfo.innerHTML = markup;
+}
+
+function clearSearchCountry() {
+  countryList.innerHTML = '';
+  countryInfo.innerHTML = '';
+}
